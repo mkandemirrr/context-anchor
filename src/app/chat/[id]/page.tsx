@@ -90,6 +90,14 @@ export default function ChatPage() {
   const [selectedModel, setSelectedModel] = useState("claude-sonnet-4-6");
   const [showModelPicker, setShowModelPicker] = useState(false);
 
+  // Anti-hallucination features
+  const [enableGrounding, setEnableGrounding] = useState(false);
+  const [enableVerification, setEnableVerification] = useState(false);
+  const [lastGroundingSources, setLastGroundingSources] = useState<{title: string; url: string; snippet: string}[]>([]);
+  const [lastVerification, setLastVerification] = useState<{verified: boolean; conflicts: string[]} | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+
   // Demo hallucination detection
   const [previousDecisions, setPreviousDecisions] = useState<string[]>([]);
 
@@ -214,7 +222,7 @@ export default function ChatPage() {
         // ignore
       }
 
-      // Call real AI API
+      // Call real AI API with anti-hallucination features
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -224,6 +232,8 @@ export default function ChatPage() {
           model: selectedModel,
           anchors: anchors,
           userApiKeys: userApiKeys,
+          enableGrounding,
+          enableVerification,
         }),
       });
 
@@ -250,6 +260,11 @@ export default function ChatPage() {
       };
 
       setMessages((prev) => [...prev, aiMsg]);
+
+      // Store grounding sources and verification result
+      if (data.groundingSources) setLastGroundingSources(data.groundingSources);
+      if (data.verification) setLastVerification(data.verification);
+      else setLastVerification(null);
 
       // Save AI message to DB
       const { data: dbAiMsg } = await supabase.from("messages").insert({
@@ -563,6 +578,38 @@ export default function ChatPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Grounding Sources */}
+                    {msg.role === "assistant" && lastGroundingSources.length > 0 && messages[messages.length - 1].id === msg.id && (
+                      <div className={styles.groundingSourcesContainer}>
+                        <div className={styles.groundingSourcesTitle}>🌍 Grounding Sources Used</div>
+                        <ul className={styles.groundingSourcesList}>
+                          {lastGroundingSources.map((s, idx) => (
+                            <li key={idx}>
+                              <a href={s.url} target="_blank" rel="noopener noreferrer">
+                                [Source {idx + 1}] {s.title}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Verification Result */}
+                    {msg.role === "assistant" && lastVerification && messages[messages.length - 1].id === msg.id && (
+                      <div className={`${styles.verificationBox} ${lastVerification.verified ? styles.verificationPass : styles.verificationFail}`}>
+                        <div className={styles.verificationTitle}>
+                          {lastVerification.verified ? "✅ Verified by Secondary Model" : "⚠️ Verification Issues Detected"}
+                        </div>
+                        {!lastVerification.verified && lastVerification.conflicts && (
+                          <ul className={styles.verificationConflicts}>
+                            {lastVerification.conflicts.map((c, idx) => (
+                              <li key={idx}>{c}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -615,6 +662,75 @@ export default function ChatPage() {
                   disabled={!input.trim() || isTyping}
                 >
                   ↑
+                </button>
+              </div>
+
+              {/* Anti-Hallucination Controls */}
+              <div className={styles.antiHallucinationControls}>
+                <label className={styles.controlLabel}>
+                  <input 
+                    type="checkbox" 
+                    checked={enableGrounding} 
+                    onChange={(e) => setEnableGrounding(e.target.checked)} 
+                  />
+                  🌍 Web Grounding
+                </label>
+                <label className={styles.controlLabel}>
+                  <input 
+                    type="checkbox" 
+                    checked={enableVerification} 
+                    onChange={(e) => setEnableVerification(e.target.checked)} 
+                  />
+                  ⚖️ Dual-Model Verify (Pro)
+                </label>
+                
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  style={{ display: "none" }} 
+                  accept=".txt,.md,.json,.csv"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    
+                    setUploadingFile(true);
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    formData.append("sessionId", sessionId);
+                    
+                    try {
+                      // Get auth token from supabase session
+                      const { data: { session } } = await supabase.auth.getSession();
+                      
+                      const res = await fetch("/api/upload", {
+                        method: "POST",
+                        headers: session?.access_token ? {
+                          Authorization: `Bearer ${session.access_token}`
+                        } : {},
+                        body: formData
+                      });
+                      
+                      const data = await res.json();
+                      if (data.success) {
+                        alert(`Uploaded! ${data.storedChunks} chunks indexed for RAG.`);
+                      } else {
+                        alert(`Upload failed: ${data.error}`);
+                      }
+                    } catch (err) {
+                      console.error("Upload error:", err);
+                      alert("Failed to upload document.");
+                    } finally {
+                      setUploadingFile(false);
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }
+                  }}
+                />
+                <button 
+                  className={styles.uploadBtn} 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingFile}
+                >
+                  {uploadingFile ? "⏳ Uploading..." : "📄 Upload Doc"}
                 </button>
               </div>
             </div>
