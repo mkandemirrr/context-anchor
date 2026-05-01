@@ -22,21 +22,25 @@ const PROMPT_TEMPLATES = [
     icon: "💻",
     name: "Code Review Expert",
     desc: "Systematic code review with security focus",
+    prompt: "You are a senior principal engineer performing a code review. Focus on:\n1. Security vulnerabilities (OWASP top 10)\n2. Performance bottlenecks\n3. Architecture & SOLID principles\n4. Readability and maintainability\n\nProvide constructive feedback with specific code examples. When suggesting changes, always explain the 'why' behind the improvement.",
   },
   {
     icon: "✍️",
     name: "Content Writer",
     desc: "SEO-optimized long-form content creation",
+    prompt: "You are an expert SEO content writer and copywriter. Your goal is to write engaging, human-sounding content that ranks well on Google.\n\nRules:\n1. Use clear, conversational language (avoid corporate jargon)\n2. Structure content with logical H2/H3 tags\n3. Naturally incorporate latent semantic indexing (LSI) keywords\n4. Write compelling introductions that hook the reader\n5. Conclude with a clear call to action (CTA)",
   },
   {
     icon: "🔬",
     name: "Research Assistant",
     desc: "Academic research with citation tracking",
+    prompt: "You are an academic research assistant with a PhD level of analytical rigor. Your primary function is to synthesize information, identify knowledge gaps, and evaluate methodology.\n\nInstructions:\n1. Maintain absolute objectivity and academic tone.\n2. When presenting data, note any potential biases or methodological limitations.\n3. Organize complex topics into structured, logical frameworks.\n4. If asked about established theories, summarize the competing schools of thought fairly.",
   },
   {
     icon: "📊",
     name: "Data Analyst",
     desc: "Data interpretation and visualization guidance",
+    prompt: "You are a senior data analyst and visualization expert. When presented with data or data-related questions:\n\n1. Look for statistically significant trends and outliers.\n2. Suggest the most effective visualization type (e.g., scatter plot for correlation, line chart for time series) for the specific data.\n3. Explain the business or real-world implications of the data findings.\n4. Warn about common data misinterpretations (correlation vs causation, base rate fallacy).",
   },
 ];
 
@@ -142,7 +146,7 @@ export default function DashboardPage() {
     loadProfile();
   }, [router]);
 
-  const handleNewChat = async () => {
+  const handleNewChat = async (templatePrompt?: string) => {
     if (profile && profile.subscription_tier === "free" && profile.free_chats_remaining <= 0) {
       alert("You have reached your free chat limit.");
       if (isAnonymous) {
@@ -161,6 +165,7 @@ export default function DashboardPage() {
       .insert({
         user_id: user.id,
         title: "New Chat Session",
+        system_prompt: templatePrompt || "",
       })
       .select()
       .single();
@@ -393,7 +398,7 @@ export default function DashboardPage() {
               {/* New Chat + Sessions */}
               <div className={styles.sessionsGrid}>
                 {/* New Session Card */}
-                <div className={styles.newSessionCard} onClick={handleNewChat}>
+                <div className={styles.newSessionCard} onClick={() => handleNewChat()}>
                   <div className={styles.newSessionIcon}>+</div>
                   <div className={styles.newSessionLabel}>New Chat Session</div>
                   {profile.subscription_tier === "free" && (
@@ -444,7 +449,11 @@ export default function DashboardPage() {
               </div>
               <div className={styles.templatesGrid}>
                 {PROMPT_TEMPLATES.map((tpl, i) => (
-                  <div key={i} className={styles.templateCard}>
+                  <div 
+                    key={i} 
+                    className={styles.templateCard}
+                    onClick={() => handleNewChat(tpl.prompt)}
+                  >
                     <div className={styles.templateIcon}>{tpl.icon}</div>
                     <div className={styles.templateName}>{tpl.name}</div>
                     <div className={styles.templateDesc}>{tpl.desc}</div>
