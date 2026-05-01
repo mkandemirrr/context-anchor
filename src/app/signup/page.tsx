@@ -78,6 +78,16 @@ export default function SignupPage() {
     });
   };
 
+  const handleGoogleSignup = async () => {
+    const supabase = createSupabaseBrowser();
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+  };
+
   return (
     <div className={styles.authPage}>
       <div className={styles.authGlow} />
@@ -98,10 +108,17 @@ export default function SignupPage() {
           🎁 3 Free Chat Sessions — No Credit Card Required
         </div>
 
-        <button className={styles.authSocialBtn} onClick={handleAppleSignup}>
-          <span className={styles.authSocialIcon}></span>
-          Sign up with Apple
-        </button>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <button className={styles.authSocialBtn} onClick={handleGoogleSignup}>
+            <span className={styles.authSocialIcon}>G</span>
+            Sign up with Google
+          </button>
+
+          <button className={styles.authSocialBtn} onClick={handleAppleSignup}>
+            <span className={styles.authSocialIcon}></span>
+            Sign up with Apple
+          </button>
+        </div>
 
         <div className={styles.authDivider}>
           <span className={styles.authDividerLine} />

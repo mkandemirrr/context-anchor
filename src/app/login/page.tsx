@@ -44,6 +44,16 @@ export default function LoginPage() {
     });
   };
 
+  const handleGoogleLogin = async () => {
+    const supabase = createSupabaseBrowser();
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+  };
+
   return (
     <div className={styles.authPage}>
       <div className={styles.authGlow} />
@@ -60,10 +70,17 @@ export default function LoginPage() {
           Log in to continue your grounded AI sessions
         </p>
 
-        <button className={styles.authSocialBtn} onClick={handleAppleLogin}>
-          <span className={styles.authSocialIcon}></span>
-          Continue with Apple
-        </button>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <button className={styles.authSocialBtn} onClick={handleGoogleLogin}>
+            <span className={styles.authSocialIcon}>G</span>
+            Continue with Google
+          </button>
+
+          <button className={styles.authSocialBtn} onClick={handleAppleLogin}>
+            <span className={styles.authSocialIcon}></span>
+            Continue with Apple
+          </button>
+        </div>
 
         <div className={styles.authDivider}>
           <span className={styles.authDividerLine} />
