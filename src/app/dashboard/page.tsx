@@ -304,6 +304,9 @@ export default function DashboardPage() {
                   </div>
                 )}
                 <div className={styles.profileDropdownDivider} />
+                <button className={styles.profileDropdownSettingsBtn} onClick={() => { setActiveTab("settings"); setShowProfileMenu(false); }}>
+                  ⚙️ Settings
+                </button>
                 <button className={styles.profileDropdownLogout} onClick={handleLogout}>
                   🚪 Log Out
                 </button>
