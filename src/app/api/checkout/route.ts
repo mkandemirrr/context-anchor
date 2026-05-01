@@ -10,12 +10,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { userId, email, plan = "monthly" } = body;
 
-    if (!userId || !email) {
+    if (!userId) {
       return NextResponse.json(
-        { error: "userId and email are required" },
+        { error: "userId is required" },
         { status: 400 }
       );
     }
+    
+    // Fallback email if missing (e.g. for guest accounts or hidden Apple emails)
+    const userEmail = email || `user-${userId}@contextanchor.ai`;
 
     const apiKey = process.env.LEMON_SQUEEZY_API_KEY;
     const storeId = process.env.LEMON_SQUEEZY_STORE_ID;
@@ -44,7 +47,7 @@ export async function POST(request: NextRequest) {
           type: "checkouts",
           attributes: {
             checkout_data: {
-              email,
+              email: userEmail,
               custom: {
                 user_id: userId,
               },
