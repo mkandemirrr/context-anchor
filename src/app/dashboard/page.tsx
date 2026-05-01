@@ -202,12 +202,17 @@ export default function DashboardPage() {
   };
 
   const handleUpgrade = async (plan: "monthly" | "yearly" | "topup") => {
+    if (!profile) return;
     setIsUpgrading(plan);
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ 
+          plan,
+          userId: profile.id,
+          email: profile.email
+        }),
       });
 
       const data = await res.json();
