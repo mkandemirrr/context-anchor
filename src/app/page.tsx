@@ -101,8 +101,8 @@ export default function LandingPage() {
 
           <div className={styles.heroStats}>
             <div className={styles.heroStat}>
-              <div className={styles.heroStatValue}>94%</div>
-              <div className={styles.heroStatLabel}>Less Hallucination</div>
+              <div className={styles.heroStatValue}>⚓</div>
+              <div className={styles.heroStatLabel}>Context Anchoring</div>
             </div>
             <div className={styles.heroStat}>
               <div className={styles.heroStatValue}>∞</div>

@@ -363,7 +363,7 @@ export default function DashboardPage() {
           {/* ===== CHATS TAB ===== */}
           {activeTab === "chats" && (
             <>
-              {/* Stats Row */}
+              {/* Stats Row — only show meaningful data */}
               <div className={styles.statsRow}>
                 <div className={styles.statCard}>
                   <div className={styles.statIcon}>💬</div>
@@ -388,13 +388,6 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 )}
-                <div className={styles.statCard}>
-                  <div className={styles.statIcon}>🛡️</div>
-                  <div className={styles.statInfo}>
-                    <div className={styles.statValue}>94%</div>
-                    <div className={styles.statLabel}>Less Hallucination</div>
-                  </div>
-                </div>
               </div>
 
               {/* New Chat + Sessions */}
@@ -440,42 +433,6 @@ export default function DashboardPage() {
                   </Link>
                 ))}
               </div>
-
-              {/* Upgrade Banner for Free Users */}
-              {profile.subscription_tier === "free" && (
-                <div className={styles.upgradeBanner}>
-                  <div className={styles.upgradeBannerLeft}>
-                    <div className={styles.upgradeBannerIcon}>🚀</div>
-                    <div className={styles.upgradeBannerText}>
-                      <h3>Unlock <span className="text-gradient">Unlimited</span> Sessions</h3>
-                      <p>Upgrade to Pro for unlimited chats, advanced anchoring, and cross-platform sync.</p>
-                    </div>
-                  </div>
-                  <div className={styles.upgradeBannerActions}>
-                    <button
-                      className={styles.upgradeBtn}
-                      onClick={() => handleUpgrade("monthly")}
-                      disabled={isUpgrading !== false}
-                    >
-                      {isUpgrading === "monthly" ? "Loading..." : "✦ Pro — $9.99/mo"}
-                    </button>
-                    <button
-                      className={styles.upgradeBtnSecondary}
-                      onClick={() => handleUpgrade("yearly")}
-                      disabled={isUpgrading !== false}
-                    >
-                      {isUpgrading === "yearly" ? "Loading..." : "⚡ Yearly — $99/yr"}
-                    </button>
-                    <button
-                      className={styles.upgradeBtnSecondary}
-                      onClick={() => handleUpgrade("topup")}
-                      disabled={isUpgrading !== false}
-                    >
-                      {isUpgrading === "topup" ? "Loading..." : "🎁 100 Chats — $4.99"}
-                    </button>
-                  </div>
-                </div>
-              )}
             </>
           )}
 
