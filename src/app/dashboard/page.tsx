@@ -48,6 +48,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState<"monthly" | "yearly" | "topup" | false>(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   
   // API Keys state
   const [apiKeys, setApiKeys] = useState({
@@ -269,8 +270,45 @@ export default function DashboardPage() {
           >
             {profile.subscription_tier === "pro" ? "✦ PRO" : "FREE"}
           </span>
-          <div className={styles.userAvatar} onClick={handleLogout} title="Log out">
-            {profile.display_name?.charAt(0).toUpperCase() || "U"}
+          <div className={styles.userMenuWrapper}>
+            <div
+              className={styles.userAvatar}
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              title="Account"
+            >
+              {profile.display_name?.charAt(0).toUpperCase() || "U"}
+            </div>
+            {showProfileMenu && (
+              <div className={styles.profileDropdown}>
+                <div className={styles.profileDropdownHeader}>
+                  <div className={styles.profileDropdownName}>{profile.display_name}</div>
+                  <div className={styles.profileDropdownEmail}>{profile.email}</div>
+                </div>
+                <div className={styles.profileDropdownDivider} />
+                <div className={styles.profileDropdownItem}>
+                  <span>Plan</span>
+                  <span className={`${styles.tierBadge} ${profile.subscription_tier === "pro" ? styles.tierBadgePro : styles.tierBadgeFree}`} style={{ fontSize: "11px", padding: "2px 8px" }}>
+                    {profile.subscription_tier === "pro" ? "✦ PRO" : "FREE"}
+                  </span>
+                </div>
+                {profile.subscription_tier === "free" && (
+                  <div className={styles.profileDropdownItem}>
+                    <span>Free Chats</span>
+                    <span>{profile.free_chats_remaining} remaining</span>
+                  </div>
+                )}
+                {profile.subscription_expires_at && (
+                  <div className={styles.profileDropdownItem}>
+                    <span>Renews</span>
+                    <span>{new Date(profile.subscription_expires_at).toLocaleDateString()}</span>
+                  </div>
+                )}
+                <div className={styles.profileDropdownDivider} />
+                <button className={styles.profileDropdownLogout} onClick={handleLogout}>
+                  🚪 Log Out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
