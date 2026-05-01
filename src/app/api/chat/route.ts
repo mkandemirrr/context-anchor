@@ -8,6 +8,7 @@ import {
   type Anchor,
   type RollingSummary,
 } from "@/lib/context-engine";
+import { getGroundingContext, type SearchResult } from "@/lib/search-engine";
 
 /**
  * Supported AI providers and their configurations.
@@ -153,6 +154,8 @@ export async function POST(request: NextRequest) {
       provider = "openai",
       model,
       userApiKeys = {} as Record<string, string>,
+      enableGrounding = false,
+      enableVerification = false,
     } = body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -198,6 +201,17 @@ export async function POST(request: NextRequest) {
       ? detectContradictions(lastUserMessage.content, anchors)
       : [];
 
+    // === KATMAN 3: Web Search Grounding ===
+    let groundingSources: SearchResult[] = [];
+    let groundingPromptAddition = "";
+    if (enableGrounding && lastUserMessage) {
+      const grounding = await getGroundingContext(lastUserMessage.content);
+      if (grounding) {
+        groundingSources = grounding.sources;
+        groundingPromptAddition = grounding.groundingPrompt;
+      }
+    }
+
     // Build optimized context payload
     const contextPayload = buildContextPayload(
       systemPrompt,
@@ -207,9 +221,13 @@ export async function POST(request: NextRequest) {
       8000
     );
 
-    // Build provider-specific request
+    // Build provider-specific request (with grounding if available)
+    const finalSystemPrompt = groundingPromptAddition
+      ? `${contextPayload.systemPrompt}\n${groundingPromptAddition}`
+      : contextPayload.systemPrompt;
+
     const apiMessages = [
-      { role: "system", content: contextPayload.systemPrompt },
+      { role: "system", content: finalSystemPrompt },
       ...contextPayload.recentMessages,
     ];
 
@@ -256,6 +274,61 @@ export async function POST(request: NextRequest) {
     const responseTokens = estimateTokens(parsed.content);
     const totalTokens = contextPayload.totalTokens + responseTokens;
 
+    // === KATMAN 4: Dual-Model Verification (Pro-only) ===
+    let verificationResult: { verified: boolean; conflicts: string[] } | null = null;
+    if (enableVerification && parsed.content) {
+      try {
+        // Use a different provider for verification
+        const verifyProvider = provider === "claude" ? "gemini" : "claude";
+        const verifyConfig = PROVIDER_CONFIG[verifyProvider];
+        const verifyKey = userApiKeys[verifyProvider] || process.env[verifyConfig?.envKey || ""];
+
+        if (verifyConfig && verifyKey) {
+          const verifyMessages = [
+            {
+              role: "system",
+              content: `You are a fact-checker. Review the following AI response for accuracy. Reply ONLY with a JSON object: {"verified": true/false, "conflicts": ["list of inaccurate claims if any"]}. Be strict but fair.`,
+            },
+            {
+              role: "user",
+              content: `Original question: ${lastUserMessage?.content || ""}
+
+AI Response to verify:
+${parsed.content}`,
+            },
+          ];
+
+          const verifyReq = verifyConfig.formatRequest(
+            verifyMessages,
+            verifyConfig.defaultModel,
+            verifyKey
+          );
+
+          const verifyRes = await fetch(verifyReq.url, {
+            method: "POST",
+            headers: verifyReq.headers,
+            body: verifyReq.body,
+          });
+
+          if (verifyRes.ok) {
+            const verifyData = await verifyRes.json();
+            const verifyParsed = verifyConfig.parseResponse(verifyData);
+            try {
+              // Try to parse JSON from verification response
+              const jsonMatch = verifyParsed.content.match(/\{[^}]+\}/);
+              if (jsonMatch) {
+                verificationResult = JSON.parse(jsonMatch[0]);
+              }
+            } catch {
+              // Verification parsing failed, skip
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Verification failed:", err);
+      }
+    }
+
     return NextResponse.json({
       content: parsed.content,
       message: parsed.content,
@@ -275,6 +348,10 @@ export async function POST(request: NextRequest) {
       },
       provider,
       model: parsed.model,
+      // Katman 3: Grounding sources
+      groundingSources: groundingSources.length > 0 ? groundingSources : undefined,
+      // Katman 4: Verification result
+      verification: verificationResult || undefined,
     });
   } catch (error) {
     console.error("Chat API error:", error);

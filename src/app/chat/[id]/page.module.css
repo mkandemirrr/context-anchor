@@ -764,3 +764,58 @@
     gap: 4px;
   }
 }
+
+/* --- Confidence Scoring UI --- */
+.confidenceLine {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.confidenceLine p {
+  flex: 1;
+}
+
+.confidenceBadge {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  margin-top: 3px;
+  cursor: help;
+}
+
+.confidenceMedium {
+  filter: none;
+}
+
+.confidenceLow {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.uncertainBlock {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  margin: 6px 0;
+  background: rgba(251, 191, 36, 0.06);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+  border-radius: var(--radius-md);
+  border-left: 3px solid rgba(251, 191, 36, 0.5);
+}
+
+.uncertainBlock p {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.uncertainIcon {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  margin-top: 1px;
+}

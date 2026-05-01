@@ -494,20 +494,54 @@ export default function ChatPage() {
                       </span>
                     </div>
                     <div className={styles.messageText}>
-                      {msg.content.split("\n").map((line, i) => (
-                        <p
-                          key={i}
-                          dangerouslySetInnerHTML={{
-                            __html: line
-                              .replace(
-                                /\*\*(.*?)\*\*/g,
-                                "<strong>$1</strong>"
-                              )
-                              .replace(/`(.*?)`/g, "<code>$1</code>")
-                              .replace(/^• /, "→ "),
-                          }}
-                        />
-                      ))}
+                      {msg.content.split("\n").map((line, i) => {
+                        // Parse confidence markers
+                        let confidenceLevel: "high" | "medium" | "low" | "uncertain" | null = null;
+                        let cleanLine = line;
+
+                        if (line.includes("[LOW_CONFIDENCE]")) {
+                          confidenceLevel = "low";
+                          cleanLine = line.replace(/\[LOW_CONFIDENCE\]\s*/g, "");
+                        } else if (line.includes("[MEDIUM_CONFIDENCE]")) {
+                          confidenceLevel = "medium";
+                          cleanLine = line.replace(/\[MEDIUM_CONFIDENCE\]\s*/g, "");
+                        } else if (line.includes("[UNCERTAIN]")) {
+                          confidenceLevel = "uncertain";
+                          cleanLine = line.replace(/\[UNCERTAIN\]\s*/g, "");
+                        }
+
+                        const htmlContent = cleanLine
+                          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                          .replace(/`(.*?)`/g, "<code>$1</code>")
+                          .replace(/^• /, "→ ")
+                          // Render source references
+                          .replace(/\[Source (\d+)\]/g, '<span class="source-ref">[Source $1]</span>');
+
+                        if (confidenceLevel === "uncertain") {
+                          return (
+                            <div key={i} className={styles.uncertainBlock}>
+                              <span className={styles.uncertainIcon}>⚠️</span>
+                              <p dangerouslySetInnerHTML={{ __html: htmlContent }} />
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div key={i} className={styles.confidenceLine}>
+                            {confidenceLevel && (
+                              <span
+                                className={`${styles.confidenceBadge} ${
+                                  confidenceLevel === "medium" ? styles.confidenceMedium : styles.confidenceLow
+                                }`}
+                                title={confidenceLevel === "medium" ? "Moderate confidence — verify if critical" : "Low confidence — may be inaccurate"}
+                              >
+                                {confidenceLevel === "medium" ? "🟡" : "🔴"}
+                              </span>
+                            )}
+                            <p dangerouslySetInnerHTML={{ __html: htmlContent }} />
+                          </div>
+                        );
+                      })}
                     </div>
 
                     {/* Anchor indicator */}

@@ -230,7 +230,7 @@ export function buildContextPayload(
   const anchorTexts = anchors.map((a) => `[ANCHOR] ${a.text}`);
   const summaryText = summary?.text ?? "";
 
-  // Build the enhanced system prompt
+  // Build the enhanced system prompt with anti-hallucination instructions
   const contextBlock = [
     "=== CONTEXT ANCHORS (Do NOT contradict these) ===",
     ...anchorTexts,
@@ -238,10 +238,37 @@ export function buildContextPayload(
     "=== ROLLING SUMMARY ===",
     summaryText,
     "",
-    "=== INSTRUCTIONS ===",
-    "You are a helpful AI assistant. CRITICAL: Never contradict the anchored facts above.",
-    "If the user asks about something that conflicts with an anchor, politely point out the existing decision.",
-    "Always be consistent with previous context.",
+    "=== ANTI-HALLUCINATION PROTOCOL ===",
+    "You are a helpful AI assistant with a strict commitment to accuracy. Follow these rules:",
+    "",
+    "1. CONFIDENCE SCORING: For every factual claim you make, internally assess your confidence.",
+    "   - If you are highly confident (established facts, well-known info): proceed normally.",
+    "   - If you are moderately confident: prefix the statement with [MEDIUM_CONFIDENCE]",
+    "   - If you are uncertain or guessing: prefix the statement with [LOW_CONFIDENCE]",
+    "   - If you genuinely don't know: say so explicitly. Never fabricate information.",
+    "",
+    "2. UNCERTAINTY DISCLOSURE: When you are not sure about something, clearly say:",
+    '   "I\'m not certain about this, but..." or "This may not be fully accurate..."',
+    "   Mark uncertain sections with [UNCERTAIN] tag.",
+    "",
+    "3. DISTINGUISH FACT FROM OPINION:",
+    "   - State established facts confidently.",
+    "   - Clearly label your suggestions, opinions, or educated guesses as such.",
+    "   - Never present a guess as a fact.",
+    "",
+    "4. SOURCE AWARENESS:",
+    "   - If grounding sources are provided below, base your answer on them.",
+    "   - When citing grounding sources, reference them as [Source 1], [Source 2], etc.",
+    "   - If no sources are provided and the question requires factual data, acknowledge the limitation.",
+    "",
+    "5. CONTEXT CONSISTENCY:",
+    "   - CRITICAL: Never contradict the anchored facts listed above.",
+    "   - If the user asks about something that conflicts with an anchor, politely point out the existing decision.",
+    "   - Always be consistent with previous context and conversation history.",
+    "",
+    "6. KNOWLEDGE CUTOFF:",
+    "   - If a question is about very recent events or data that may have changed, note your knowledge cutoff.",
+    "   - Say: 'My information may not reflect the very latest changes on this topic.'",
   ].join("\n");
 
   const enhancedSystemPrompt = systemPrompt
