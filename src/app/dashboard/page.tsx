@@ -47,7 +47,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<"chats" | "prompts" | "settings">("chats");
   const [loading, setLoading] = useState(true);
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [isUpgrading, setIsUpgrading] = useState<"monthly" | "topup" | false>(false);
+  const [isUpgrading, setIsUpgrading] = useState<"monthly" | "yearly" | "topup" | false>(false);
   
   // API Keys state
   const [apiKeys, setApiKeys] = useState({
@@ -182,10 +182,10 @@ export default function DashboardPage() {
     }
   };
 
-  const handleUpgrade = async (plan: "monthly" | "topup" = "monthly") => {
+  const handleUpgrade = async (plan: "monthly" | "yearly" | "topup" = "monthly") => {
     if (isAnonymous) {
       // Must save account before purchasing
-      router.push(plan === "monthly" ? "/signup?plan=pro" : "/signup");
+      router.push(plan === "monthly" || plan === "yearly" ? "/signup?plan=pro" : "/signup");
       return;
     }
 
@@ -376,7 +376,15 @@ export default function DashboardPage() {
                     onClick={() => handleUpgrade("monthly")}
                     disabled={isUpgrading !== false}
                   >
-                    {isUpgrading === "monthly" ? "Loading..." : "✦ Upgrade to Pro — $9.99/mo"}
+                    {isUpgrading === "monthly" ? "Loading..." : "✦ Pro ($9.99/mo)"}
+                  </button>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => handleUpgrade("yearly")}
+                    disabled={isUpgrading !== false}
+                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
+                  >
+                    {isUpgrading === "yearly" ? "Loading..." : "⚡ Pro Yearly ($99/yr)"}
                   </button>
                   <button 
                     className="btn btn-secondary" 
@@ -384,7 +392,7 @@ export default function DashboardPage() {
                     disabled={isUpgrading !== false}
                     style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
                   >
-                    {isUpgrading === "topup" ? "Loading..." : "⚡ Buy 100 Chats — $4.99"}
+                    {isUpgrading === "topup" ? "Loading..." : "🎁 100 Chats ($4.99)"}
                   </button>
                 </div>
               </div>

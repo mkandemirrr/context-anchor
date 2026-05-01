@@ -387,9 +387,14 @@ export default function LandingPage() {
                   Priority support
                 </li>
               </ul>
-              <button onClick={(e) => handleGetStarted(e, "pro")} disabled={isStarting} className="btn btn-primary" style={{ width: "100%" }}>
-                {isStarting ? "Starting..." : "✦ Go Pro"}
-              </button>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <button onClick={(e) => handleGetStarted(e, "pro")} disabled={isStarting} className="btn btn-primary" style={{ width: "100%" }}>
+                  {isStarting ? "Starting..." : "✦ Go Pro ($9.99/mo)"}
+                </button>
+                <button onClick={(e) => handleGetStarted(e, "yearly")} disabled={isStarting} className="btn btn-secondary" style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  {isStarting ? "Starting..." : "⚡ Go Pro Yearly ($99/yr) — Save 17%"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
