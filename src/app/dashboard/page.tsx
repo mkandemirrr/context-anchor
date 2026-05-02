@@ -217,10 +217,10 @@ export default function DashboardPage() {
 
       const data = await res.json();
 
-      if (data.url) {
-        window.location.href = data.url;
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
       } else {
-        alert("Failed to start checkout. Please try again.");
+        alert(data.error || "Failed to start checkout. Please try again.");
       }
     } catch (err) {
       console.error("Checkout error:", err);
